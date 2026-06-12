@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>荆州古城墙 · 日常/节假日热力分布系统</title>
+    <title>荆州古城白天热力人流图 · 动态热力系统</title>
+    <!-- 清爽字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -11,138 +13,216 @@
             box-sizing: border-box;
         }
         body {
-            font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Roboto, Arial, sans-serif;
+            font-family: 'Inter', "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
             overflow: hidden;
+            background: #eef2f9;   /* 明亮背景底色 */
         }
         #map {
             width: 100vw;
             height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
         }
         
+        /* ========= 浅蓝色艺术标题 ========= */
+        .hero-title {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            text-align: center;
+            padding: 16px 24px 14px;
+            background: linear-gradient(135deg, #b8e1fc 0%, #8ec5fc 100%);
+            backdrop-filter: blur(2px);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+            border-bottom: 2px solid #ffffffaa;
+            pointer-events: none;
+        }
+        .hero-title h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #0a4c6e;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+            font-family: 'Inter', cursive;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: transparent;
+        }
+        .hero-title h1::before {
+            content: "☀️";
+            font-size: 1.8rem;
+            filter: drop-shadow(0 1px 1px white);
+        }
+        .hero-title h1::after {
+            content: "🗺️";
+            font-size: 1.7rem;
+        }
+        .mode-badge {
+            display: inline-block;
+            background: #ffffffcc;
+            backdrop-filter: blur(4px);
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 14px;
+            padding: 4px 14px;
+            border-radius: 40px;
+            color: #0a5c7e;
+            border-left: 3px solid #ffaa55;
+            font-family: 'Inter', monospace;
+            pointer-events: auto;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* 控制按钮组 - 明亮半透明风格 */
         .control {
             position: absolute;
-            top: 20px;
+            top: 95px;
             left: 20px;
-            z-index: 999;
-            background: rgba(255,255,255,0.96);
-            backdrop-filter: blur(4px);
-            padding: 12px 18px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            border: 1px solid rgba(0,0,0,0.08);
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            padding: 10px 18px;
+            border-radius: 56px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(100, 150, 200, 0.3);
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            max-width: 420px;
+            gap: 8px;
+            max-width: 500px;
+            pointer-events: auto;
         }
         .control button {
-            padding: 6px 16px;
+            padding: 7px 18px;
             border: none;
-            background: #2a80eb;
-            color: white;
-            border-radius: 30px;
+            background: #eef3fc;
+            color: #1e5a7a;
+            border-radius: 40px;
             cursor: pointer;
             font-size: 13px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-weight: 600;
+            transition: 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            letter-spacing: 0.3px;
+            border: 1px solid #c7e2ff;
         }
         .control button:hover {
-            background: #1e6acf;
-            transform: translateY(-1px);
-        }
-        .control button:active {
-            transform: translateY(1px);
+            transform: translateY(-2px);
+            background: #d9ebff;
+            border-color: #7fb6e5;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .control .holiday-btn {
-            background: #ff8c42;
+            background: #ffeed5;
+            border-color: #ffcd94;
+            color: #c46b0a;
         }
         .control .holiday-btn:hover {
-            background: #e07c2e;
+            background: #ffe0b5;
+        }
+        .control .clear-btn {
+            background: #f0f2f5;
+            color: #5a6e7c;
+        }
+        .control .toggle-btn {
+            background: #e2f0fa;
+            color: #2c6e6e;
         }
 
+        /* 右下侧信息 - 清爽浅色 */
         .info {
             position: absolute;
-            bottom: 20px;
+            bottom: 24px;
             left: 20px;
-            z-index: 999;
-            background: rgba(0,0,0,0.75);
-            backdrop-filter: blur(8px);
-            color: white;
-            padding: 10px 16px;
-            border-radius: 28px;
+            z-index: 1000;
+            background: rgba(255, 255, 245, 0.95);
+            backdrop-filter: blur(12px);
+            color: #1f4e6e;
+            padding: 10px 18px;
+            border-radius: 32px;
             font-size: 13px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-            max-width: 400px;
-            pointer-events: none;
             font-weight: 500;
+            box-shadow: 0 5px 14px rgba(0,0,0,0.1);
+            max-width: 340px;
+            pointer-events: none;
+            border-left: 4px solid #4aa3ff;
+            font-family: monospace;
         }
-
+        
+        /* 图例 - 明亮卡片 */
         .legend {
             position: absolute;
             left: 20px;
-            bottom: 85px;
-            z-index: 999;
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(4px);
-            padding: 10px 14px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            bottom: 105px;
+            z-index: 1000;
+            background: rgba(255, 248, 235, 0.96);
+            backdrop-filter: blur(8px);
+            padding: 10px 15px;
+            border-radius: 20px;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.12);
             font-size: 12px;
-            border: 1px solid #ddd;
+            border: 1px solid #ffddb0;
+            color: #2a5a78;
+            width: 190px;
         }
         .legend h4 {
             margin-bottom: 6px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
+            color: #1f6e9e;
         }
         .gradient {
-            width: 160px;
+            width: 100%;
             height: 14px;
-            background: linear-gradient(to right, #0000ff, #00ffff, #00ff00, #ffff00, #ffa500, #ff0000);
+            background: linear-gradient(to right, #0000ff, #00ffff, #00ff88, #ffff00, #ffa500, #ff0000);
             margin: 6px 0;
             border-radius: 20px;
         }
         .labels {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
-            padding: 0 2px;
+            font-size: 10px;
+            color: #3f627c;
         }
 
+        /* 右侧排行榜 - 浅色磨砂玻璃 */
         .point-list {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 999;
-            background: rgba(255,255,255,0.97);
-            backdrop-filter: blur(4px);
+            top: 100px;
+            right: 16px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(20px);
             padding: 12px 0;
-            border-radius: 20px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            max-height: 85vh;
+            border-radius: 28px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+            max-height: 74vh;
             overflow-y: auto;
-            width: 275px;
-            border: 1px solid rgba(0,0,0,0.1);
+            width: 280px;
+            border: 1px solid rgba(70, 150, 200, 0.3);
         }
         .point-list h4 {
             margin: 0 0 8px 18px;
             font-size: 16px;
             font-weight: 700;
-            border-left: 5px solid #ff9800;
+            border-left: 5px solid #ff9f4a;
             padding-left: 12px;
-            color: #1e4663;
+            color: #115277;
             display: flex;
             align-items: center;
             gap: 8px;
         }
         .point-list h4 small {
             font-size: 11px;
+            background: #eef3ff;
+            padding: 2px 10px;
+            border-radius: 40px;
+            color: #ec7e1a;
             font-weight: normal;
-            background: #ffecb3;
-            padding: 2px 8px;
-            border-radius: 30px;
-            color: #b45f06;
         }
         .rank-list {
             list-style: none;
@@ -153,56 +233,94 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 18px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 10px 16px;
+            border-bottom: 1px solid #e2edf7;
             cursor: pointer;
             transition: 0.15s;
             gap: 8px;
+            border-radius: 18px;
+            margin: 0 6px;
         }
         .rank-item:hover {
-            background: #eef3fc;
-            transform: translateX(-2px);
+            background: #d9ecff;
+            transform: translateX(-3px);
         }
         .rank-number {
-            font-weight: 700;
+            font-weight: 800;
             font-size: 14px;
-            width: 32px;
-            color: #ff6d00;
+            width: 36px;
+            color: #f28705;
         }
         .rank-name {
             flex: 1;
             font-size: 13px;
             font-weight: 500;
-            color: #2c3e50;
+            color: #205072;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .rank-value {
-            background: #f0f2f5;
+            background: #eef2fa;
             padding: 3px 10px;
             border-radius: 30px;
             font-size: 12px;
             font-weight: 600;
-            color: #d35400;
+            color: #cd7114;
         }
         .point-list::-webkit-scrollbar {
             width: 5px;
         }
         .point-list::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #e7eef5;
             border-radius: 5px;
         }
         .point-list::-webkit-scrollbar-thumb {
-            background: #bbb;
+            background: #ffa25b;
             border-radius: 5px;
         }
-
+        
         @media (max-width: 700px) {
-            .point-list { width: 250px; }
-            .rank-item { padding: 8px 12px; }
-            .rank-name { font-size: 12px; }
-            .control button { padding: 5px 12px; font-size: 11px; }
+            .hero-title h1 { font-size: 1.3rem; }
+            .control { top: 85px; padding: 8px 12px; gap: 6px; }
+            .control button { padding: 5px 12px; font-size: 10px; }
+            .point-list { width: 250px; top: 90px; }
+            .legend { width: 170px; bottom: 85px; }
+            .info { font-size: 10px; max-width: 260px; }
+        }
+        
+        /* ======= 动态点位脉冲动画 (热力点动态展示) ======= */
+        @keyframes pulseGlow {
+            0% {
+                transform: scale(0.92);
+                opacity: 0.85;
+                box-shadow: 0 0 0 0 rgba(255, 100, 20, 0.5);
+            }
+            70% {
+                transform: scale(1.1);
+                opacity: 1;
+                box-shadow: 0 0 0 8px rgba(255, 80, 40, 0);
+            }
+            100% {
+                transform: scale(0.92);
+                opacity: 0.85;
+                box-shadow: 0 0 0 0 rgba(255, 80, 40, 0);
+            }
+        }
+        .dynamic-marker {
+            width: 28px;
+            height: 28px;
+            background: radial-gradient(circle, #ff8c42, #ff5e00);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 8px rgba(255, 100, 0, 0.8);
+            animation: pulseGlow 1.6s infinite ease-in-out;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .dynamic-marker:hover {
+            transform: scale(1.2);
+            background: radial-gradient(circle, #ffb347, #ff6a00);
         }
     </style>
 
@@ -216,51 +334,50 @@
 <body>
 <div id="map"></div>
 
+<!-- 浅蓝色标题栏 -->
+<div class="hero-title" id="dynamicTitleBar">
+    <h1>荆州古城白天热力人流图 <span class="mode-badge" id="modeIndicator">🌞 日常热力</span></h1>
+</div>
+
 <div class="control">
-    <button onclick="showDayHeat()">🌞 日常白天热力</button>
-    <button class="holiday-btn" onclick="showHolidayHeat()">🎉 节假日人流热力</button>
-    <button onclick="clearHeat()">🗑️ 清空热力</button>
-    <button onclick="togglePoints()">📍 显示/隐藏点位</button>
+    <button onclick="showDayHeat()">🌞 日常热力</button>
+    <button class="holiday-btn" onclick="showHolidayHeat()">🎉 节假日热力</button>
+    <button class="clear-btn" onclick="clearHeat()">🗑️ 清空图层</button>
+    <button class="toggle-btn" onclick="togglePoints()">📍 显示/隐藏点位</button>
 </div>
 
 <div class="legend">
-    <h4>🎨 热力分布图例</h4>
+    <h4>🔥 白天人流热力</h4>
     <div class="gradient"></div>
     <div class="labels">
-        <span>低 (蓝)</span>
-        <span>中 (绿)</span>
-        <span>高 (红)</span>
+        <span>稀疏(蓝)</span>
+        <span>适中(绿)</span>
+        <span>密集(红)</span>
     </div>
-    <div style="margin-top:5px;">颜色越红 | 游客密度越高</div>
-    <div style="margin-top:4px; font-size:10px; color:#555;">✅ 热力半径随缩放动态调整（放大地图更精细）</div>
+    <div style="margin-top:5px; font-size:10px;">颜色越红 → 游客密度越高</div>
+    <div style="margin-top:4px; font-size:9px;">✨ 动态光圈点位 = 热门景点</div>
 </div>
 
-<div class="info" id="info">✨ 点击地图任意位置，显示最近景点及热度</div>
+<div class="info" id="info">🏮 热力系统已开启 · 日常白天模式已加载</div>
 
 <div class="point-list">
-    <h4>🏆 热度排行榜 <small>日常/节假日双指数</small></h4>
+    <h4>🏆 热度排行榜 <small>日常/节假日指数</small></h4>
     <div id="rank-list-container" class="rank-list">
-        <div style="padding: 16px; text-align: center; color: #888;">加载排行中...</div>
+        <div style="padding: 16px; text-align: center; color: #608b9b;">加载景点排行中...</div>
     </div>
 </div>
 
 <script>
     // ============================================================
-    // 荆州古城热力点位（已按要求删除：新北门、小北门、南门广场、拱极门、西门）
-    // 新增：古城墙景区、城墙凉亭
-    // 添加节假日人流指数 (holidayCount) —— 基于节假日客流激增特性
+    // 荆州古城热力数据 (保留所有核心景点，无范围线，完全明亮风格)
+    // 日常热度 dayCount / 节假日热度 holidayCount
     // ============================================================
     const points = [
-        // 核心高热区 — 节假日客流显著上升
         { "lng": 112.216076, "lat": 30.347738, "name": "宾阳楼", "dayCount": 50, "holidayCount": 78 },
         { "lng": 112.215857, "lat": 30.347559, "name": "东门景区", "dayCount": 48, "holidayCount": 75 },
         { "lng": 112.215393, "lat": 30.347028, "name": "张居正故居", "dayCount": 46, "holidayCount": 70 },
-        // 古城墙景区（热门打卡点）
         { "lng": 112.216500, "lat": 30.347980, "name": "古城墙景区", "dayCount": 47, "holidayCount": 74 },
-        // 城墙凉亭（相对悠闲）
         { "lng": 112.218200, "lat": 30.348300, "name": "城墙凉亭", "dayCount": 38, "holidayCount": 56 },
-        
-        // 其他保留点位
         { "lng": 112.180126, "lat": 30.353465, "name": "荆州博物馆", "dayCount": 45, "holidayCount": 68 },
         { "lng": 112.218080, "lat": 30.347627, "name": "金凤广场", "dayCount": 38, "holidayCount": 62 },
         { "lng": 112.198193, "lat": 30.348060, "name": "南纪门(老南门)", "dayCount": 36, "holidayCount": 58 },
@@ -270,42 +387,43 @@
         { "lng": 112.198193, "lat": 30.358022, "name": "玄妙观", "dayCount": 40, "holidayCount": 60 }
     ];
 
-    // 日常最大值 & 节假日最大值 (用于热力图归一化)
     const MAX_DAY = Math.max(...points.map(p => p.dayCount), 50);
     const MAX_HOLIDAY = Math.max(...points.map(p => p.holidayCount), 78);
 
     let map = null;
     let heatmap = null;
-    let markers = [];
+    let markers = [];       // 存储动态标记
     let pointsVisible = true;
+    let currentMode = "day";
     const center = [112.215713, 30.356396];
 
-    // 动态半径 (防止缩放混叠)
+    // ---------- 动态半径（根据缩放自适应）----------
     function getAdaptiveRadius() {
-        if (!map) return 35;
+        if (!map) return 32;
         const zoom = map.getZoom();
-        let radius;
-        if (zoom >= 16) radius = 22;
-        else if (zoom >= 14) radius = 32;
-        else if (zoom >= 12) radius = 42;
-        else radius = 52;
-        return Math.min(55, Math.max(20, radius));
+        if (zoom >= 17) return 18;
+        if (zoom >= 15) return 26;
+        if (zoom >= 13) return 36;
+        if (zoom >= 11) return 46;
+        return 52;
     }
-
+    
     function updateHeatmapRadius() {
-        if (!heatmap) return;
-        heatmap.setOptions({ radius: getAdaptiveRadius() });
+        if (heatmap && heatmap._heatmapVisible !== false && heatmap._heatmapVisible !== undefined) {
+            heatmap.setOptions({ radius: getAdaptiveRadius() });
+        }
     }
-
+    
     function bindZoomEvent() {
         map.on('zoomend', () => {
-            if (heatmap && heatmap._heatmapVisible) updateHeatmapRadius();
+            if (heatmap && heatmap._heatmapVisible === true) {
+                updateHeatmapRadius();
+            }
         });
     }
-
-    // 渲染右侧排行榜 (显示日常指数 + 节假日指数括号内)
+    
+    // ---------- 右侧排行榜渲染 ----------
     function renderRankingList() {
-        // 按日常热度排序展示，但显示双指数
         const sorted = [...points].sort((a, b) => b.dayCount - a.dayCount);
         const container = document.getElementById('rank-list-container');
         if (!container) return;
@@ -321,32 +439,43 @@
                 <div class="rank-item" onclick="locatePoint(${item.lng}, ${item.lat}, '${safeName}')">
                     <div class="rank-number">${medalIcon}${rank}</div>
                     <div class="rank-name" title="${item.name}">${item.name}</div>
-                    <div class="rank-value">🔥 ${item.dayCount}<span style="font-size:10px; color:#ff8c42;"> / 🎉${item.holidayCount}</span></div>
+                    <div class="rank-value">🔥 ${item.dayCount}<span style="font-size:10px; color:#dd7711;"> / 🎉${item.holidayCount}</span></div>
                 </div>
             `;
         });
         container.innerHTML = html;
     }
     
-    // 显示地图点位标记
+    // 动态点位展示 (带脉冲动画的热力点，满足动态展示)
     function showPoints() {
-        if (markers.length) map.remove(markers);
-        markers = [];
+        // 移除已有标记
+        if (markers.length) {
+            map.remove(markers);
+            markers = [];
+        }
         points.forEach(p => {
+            // 创建带脉冲动画的自定义div marker
+            const markerContent = document.createElement('div');
+            markerContent.className = 'dynamic-marker';
+            markerContent.title = `${p.name}\n日常热度: ${p.dayCount}  节假日: ${p.holidayCount}`;
+            
             const marker = new AMap.Marker({
                 position: [p.lng, p.lat],
-                title: p.name,
-                offset: new AMap.Pixel(-12, -30)
+                content: markerContent,
+                offset: new AMap.Pixel(-14, -14),
+                anchor: 'center',
+                zIndex: 10
             });
+            
+            // 绑定点击事件显示详细信息
             marker.on('click', () => {
-                document.getElementById("info").innerHTML = `📍 ${p.name}<br>🌞 日常热度: ${p.dayCount} | 🎉 节假日热度: ${p.holidayCount}<br>✨ 日常排名: ${getRankByValue(p.dayCount, 'day')} | 节假日排名: ${getRankByValue(p.holidayCount, 'holiday')}`;
+                document.getElementById("info").innerHTML = `📍 ${p.name}<br>🌞 日常热度: ${p.dayCount} ｜ 🎉 节假日热度: ${p.holidayCount}<br>🏅 日常排行: ${getRankByValue(p.dayCount, 'day')} · 节假日排行: ${getRankByValue(p.holidayCount, 'holiday')}`;
             });
             markers.push(marker);
         });
         map.add(markers);
     }
     
-    // 通用排名获取 (根据日常或节假日值)
     function getRankByValue(value, type) {
         const sorted = [...points].sort((a, b) => (type === 'day' ? b.dayCount - a.dayCount : b.holidayCount - a.holidayCount));
         const rank = sorted.findIndex(p => (type === 'day' ? p.dayCount === value : p.holidayCount === value)) + 1;
@@ -360,11 +489,11 @@
         if (pointsVisible) {
             map.remove(markers);
             pointsVisible = false;
-            document.getElementById("info").innerHTML = "🗺️ 点位标记已隐藏";
+            document.getElementById("info").innerHTML = "📍 动态点位已隐藏 — 热力图层依然可见";
         } else {
             map.add(markers);
             pointsVisible = true;
-            document.getElementById("info").innerHTML = "📍 点位标记已显示";
+            document.getElementById("info").innerHTML = "✨ 动态脉冲点位已显示 — 点击任意光圈查看热度详情";
         }
     }
     
@@ -373,34 +502,54 @@
         map.setZoom(16);
         const target = points.find(p => p.name === name);
         if (target) {
-            document.getElementById("info").innerHTML = `🎯 已定位: ${target.name}<br>🌞 日常热度: ${target.dayCount} | 🎉 节假日热度: ${target.holidayCount}`;
+            document.getElementById("info").innerHTML = `🎯 定位: ${target.name}<br>🌞 日常热度 ${target.dayCount} ｜ 🎉 节假日 ${target.holidayCount}<br>📌 点击右侧排行可快速定位`;
         } else {
-            document.getElementById("info").innerHTML = `📍 已定位: ${name}`;
+            document.getElementById("info").innerHTML = `📍 定位至: ${name}`;
         }
     }
     
-    // 日常热力 (白天)
-    function showDayHeat() {
-        if (!heatmap) return;
-        const heatData = points.map(p => ({ lng: p.lng, lat: p.lat, count: p.dayCount }));
-        heatmap.setDataSet({ max: MAX_DAY, data: heatData });
-        heatmap.setOptions({ radius: getAdaptiveRadius() });
-        heatmap.show();
-        heatmap._heatmapVisible = true;
-        const top = [...points].sort((a,b) => b.dayCount - a.dayCount)[0];
-        document.getElementById("info").innerHTML = `🌞 日常白天热力已加载 | 峰值: ${top.name} (${top.dayCount})<br>🎉 点击“节假日人流热力”查看假期高峰分布`;
+    // 标题模式切换
+    function setModeTitle(mode) {
+        const titleH1 = document.querySelector('.hero-title h1');
+        const modeSpan = document.getElementById('modeIndicator');
+        if (mode === 'day') {
+            titleH1.innerHTML = `荆州古城白天热力人流图 <span class="mode-badge" id="modeIndicator">🌞 日常热力</span>`;
+            if (modeSpan) modeSpan.innerText = '🌞 日常热力';
+        } else {
+            titleH1.innerHTML = `荆州古城节假日热力分布 <span class="mode-badge" id="modeIndicator">🎉 假期峰值</span>`;
+            if (modeSpan) modeSpan.innerText = '🎉 假期峰值';
+        }
     }
     
-    // 节假日人流热力 (新增功能)
+    // 日常热力 (白天模式)
+    function showDayHeat() {
+        if (!heatmap) {
+            console.warn("heatmap未初始化");
+            return;
+        }
+        const heatData = points.map(p => ({ lng: p.lng, lat: p.lat, count: p.dayCount }));
+        heatmap.setDataSet({ max: MAX_DAY, data: heatData });
+        heatmap.setOptions({ radius: getAdaptiveRadius(), opacity: [0.35, 0.9], blur: 15 });
+        heatmap.show();
+        heatmap._heatmapVisible = true;
+        currentMode = "day";
+        setModeTitle('day');
+        const top = [...points].sort((a,b) => b.dayCount - a.dayCount)[0];
+        document.getElementById("info").innerHTML = `🌞 日常白天热力已开启 | 主峰: ${top.name} (热度${top.dayCount})<br>🎉 可切换“节假日热力”查看假日高峰分布`;
+    }
+    
+    // 节假日人流热力
     function showHolidayHeat() {
         if (!heatmap) return;
         const heatData = points.map(p => ({ lng: p.lng, lat: p.lat, count: p.holidayCount }));
         heatmap.setDataSet({ max: MAX_HOLIDAY, data: heatData });
-        heatmap.setOptions({ radius: getAdaptiveRadius() });
+        heatmap.setOptions({ radius: getAdaptiveRadius(), opacity: [0.4, 0.95], blur: 16 });
         heatmap.show();
         heatmap._heatmapVisible = true;
+        currentMode = "holiday";
+        setModeTitle('holiday');
         const top = [...points].sort((a,b) => b.holidayCount - a.holidayCount)[0];
-        document.getElementById("info").innerHTML = `🎉 节假日人流热力分布 | 峰值区域: ${top.name} (客流指数 ${top.holidayCount})<br>🔥 宾阳楼、东门景区、古城墙景区为节假日超高热点`;
+        document.getElementById("info").innerHTML = `🎉 节假日人流热力 | 峰值: ${top.name} (客流指数${top.holidayCount})<br>🔥 宾阳楼、古城墙景区假日热度飙升`;
     }
     
     function clearHeat() {
@@ -408,10 +557,14 @@
             heatmap.hide();
             heatmap._heatmapVisible = false;
         }
-        document.getElementById("info").innerHTML = "🗑️ 热力图层已清除";
+        document.getElementById("info").innerHTML = "🗑️ 热力图层已清除 · 点击日常/节假日按钮重新激活热力";
+        const modeSpan = document.getElementById('modeIndicator');
+        if (modeSpan) modeSpan.innerText = '🌀 无热力图层';
+        const titleH1 = document.querySelector('.hero-title h1');
+        titleH1.innerHTML = `荆州古城热力系统 <span class="mode-badge" id="modeIndicator">🌀 待激活</span>`;
     }
     
-    // 地图点击：查找最近点位 (显示日常与节假日热度对比)
+    // 地图点击显示最近景点
     function onMapClick(e) {
         const lng = e.lnglat.getLng();
         const lat = e.lnglat.getLat();
@@ -422,39 +575,66 @@
         });
         if (nearest) {
             const distanceMeters = minDist * 111000;
-            document.getElementById("info").innerHTML = `📍 最近: ${nearest.name} (约${Math.round(distanceMeters)}米)<br>🌞 日常热度: ${nearest.dayCount} | 🎉 节假日热度: ${nearest.holidayCount}<br>💡 节假日客流增幅显著，点击右侧查看详细排行`;
+            document.getElementById("info").innerHTML = `📍 最近: ${nearest.name} (约${Math.round(distanceMeters)}米)<br>🌞 日常热度: ${nearest.dayCount} ｜ 🎉 节假日热度: ${nearest.holidayCount}<br>💡 右侧排行可一键定位`;
         } else {
-            document.getElementById("info").innerHTML = `🗺️ 坐标: ${lng.toFixed(5)}, ${lat.toFixed(5)}`;
+            document.getElementById("info").innerHTML = `🗺️ 坐标: ${lng.toFixed(5)}, ${lat.toFixed(5)} · 荆州古城历史区`;
         }
     }
     
+    // 初始化地图 (明亮底图，无范围线，自动加载日常热力)
     function initMap() {
-        map = new AMap.Map("map", { center, zoom: 14.2, resizeEnable: true });
+        // 使用清新亮色底图风格
+        map = new AMap.Map("map", { 
+            center: center, 
+            zoom: 14.2, 
+            resizeEnable: true,
+            mapStyle: 'amap://styles/normal',  // 明亮标准底图
+            viewMode: '2D'
+        });
+        
+        // 加载热力图插件
         AMap.plugin("AMap.Heatmap", () => {
             heatmap = new AMap.Heatmap(map, {
-                radius: 35,
-                opacity: [0.3, 0.92],
-                gradient: { 0.05:"#0000ff", 0.25:"#00ffff", 0.45:"#00ff00", 0.65:"#ffff00", 0.85:"#ffa500", 1.0:"#ff0000" }
+                radius: 34,
+                opacity: [0.3, 0.88],
+                gradient: { 0.05:"#0000ff", 0.25:"#00ffff", 0.45:"#00ff77", 0.65:"#ffff00", 0.85:"#ffa500", 1.0:"#ff0000" }
             });
             heatmap.hide();
-            heatmap._heatmapVisible = false;
+            // 关键: 页面完全加载后自动展示日常热力 (满足打开即热力开启)
+            setTimeout(() => {
+                if (heatmap) {
+                    showDayHeat();   // 自动打开日常热力图
+                }
+            }, 400);
         });
+        
+        // 显示动态点位 (带脉冲动画)
         showPoints();
         renderRankingList();
+        
         map.on("click", onMapClick);
         bindZoomEvent();
+        
+        // 地图缩放时热力半径实时更新
+        map.on('zoomend', () => {
+            if (heatmap && heatmap._heatmapVisible === true) {
+                updateHeatmapRadius();
+            }
+        });
+        
         setTimeout(() => {
-            const top = [...points].sort((a,b) => b.dayCount - a.dayCount)[0];
-            document.getElementById("info").innerHTML = `🏆 荆州古城热力系统 | 日常冠军: ${top.name} (${top.dayCount})<br>🎉 新增节假日人流分布 (基于黄金周/小长假模型) 点击按钮查看`;
-        }, 500);
+            const topDaily = [...points].sort((a,b) => b.dayCount - a.dayCount)[0];
+            document.getElementById("info").innerHTML = `🏯 荆州古城白天热力系统 · 日常热度榜首: ${topDaily.name} (${topDaily.dayCount})<br>✨ 动态光圈点位展示实时热门区域 | 无范围线干扰`;
+        }, 800);
     }
     
-    // 全局函数绑定
+    // 全局挂载
     window.showDayHeat = showDayHeat;
     window.showHolidayHeat = showHolidayHeat;
     window.clearHeat = clearHeat;
     window.togglePoints = togglePoints;
     window.locatePoint = locatePoint;
+    
     window.onload = initMap;
 </script>
 </body>
